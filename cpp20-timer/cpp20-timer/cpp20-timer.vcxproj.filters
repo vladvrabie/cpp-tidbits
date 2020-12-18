@@ -18,7 +18,7 @@
     <ClInclude Include="timing.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="selfcountingtype.h">
+    <ClInclude Include="instancecountingtype.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

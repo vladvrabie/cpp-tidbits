@@ -140,7 +140,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="selfcountingtype.h" />
+    <ClInclude Include="instancecountingtype.h" />
     <ClInclude Include="timing.h" />
   </ItemGroup>
   <ItemGroup>

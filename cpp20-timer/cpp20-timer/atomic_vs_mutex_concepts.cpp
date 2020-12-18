@@ -2,7 +2,7 @@
 #include <mutex>
 #include <thread>
 
-#include "selfcountingtype.h"
+#include "instancecountingtype.h"
 #include "timing.h"
 
 
@@ -24,7 +24,7 @@ void f(int& x, std::mutex& mutex)
 }
 
 template <class T>
-void f(SelfCountingType<T>& x, std::mutex& mutex)
+void f(InstanceCountingType<T>& x, std::mutex& mutex)
 {
 	for (int i = 0; i < 100'000; ++i)
 	{
@@ -75,9 +75,9 @@ int run_mutex()
 
 auto run_mutex_custom_type()
 {
-	SelfCountingType<int> x{ 0 };
+	InstanceCountingType<int> x{ 0 };
 	std::mutex mutex;
-	void (*mutex_custom_type_f)(SelfCountingType<int>&, std::mutex&) = f;
+	void (*mutex_custom_type_f)(InstanceCountingType<int>&, std::mutex&) = f;
 
 	std::thread t1{ mutex_custom_type_f, std::ref(x), std::ref(mutex) };
 	std::thread t2{ mutex_custom_type_f, std::ref(x), std::ref(mutex) };
@@ -125,16 +125,16 @@ int main()
 	if (std::all_of(xs.cbegin(), xs.cend(), [&xs](int i) {return xs[0] == i; }))
 		std::cout << "All results are equal to " << xs[0] << "\n\n";
 
-	auto xs2 = std::vector(nb_runs, SelfCountingType<int>{});
+	auto xs2 = std::vector(nb_runs, InstanceCountingType<int>{});
 	std::cout << "\n\n";
 	auto stats5 = Timer<std::chrono::milliseconds>::time_function_repeatedly(
 		nb_runs, xs2.begin(), run_mutex_custom_type
 	);
 	std::cout << "\n\n";
 	std::cout << stats5;
-	if (std::all_of(xs2.cbegin(), xs2.cend(), [&xs2](const SelfCountingType<int>& i) {return xs2[0] == i; }))
+	if (std::all_of(xs2.cbegin(), xs2.cend(), [&xs2](const InstanceCountingType<int>& i) {return xs2[0] == i; }))
 		std::cout << "All results are equal to " << xs2[0].value << "\n";
-	std::cout << "Custom type number of instances: " << SelfCountingType<int>::instances << '\n';
+	std::cout << "Custom type number of instances: " << InstanceCountingType<int>::instances << '\n';
  
 	return 0;
 }
