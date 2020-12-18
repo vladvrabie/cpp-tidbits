@@ -96,15 +96,15 @@ int main()
 {
 	std::size_t nb_runs = 50;
 
-	//auto stats = Timer<std::chrono::milliseconds>::time_function_repeatedly(
-	//	nb_runs, run_atomic
-	//);
-	//std::cout << stats << '\n';
+	auto stats = Timer<std::chrono::milliseconds>::time_function_repeatedly(
+		nb_runs, run_atomic
+	);
+	std::cout << stats << '\n';
 
-	//auto stats2 = Timer<std::chrono::milliseconds>::time_function_repeatedly(
-	//	nb_runs, run_mutex
-	//);
-	//std::cout << stats2 << '\n';
+	auto stats2 = Timer<std::chrono::milliseconds>::time_function_repeatedly(
+		nb_runs, run_mutex
+	);
+	std::cout << stats2 << '\n';
 
 	auto xs = std::vector(nb_runs, 0);
 	//xs.assign(nb_runs, 0);

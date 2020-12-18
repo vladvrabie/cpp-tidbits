@@ -29,6 +29,9 @@ concept duration = is_duration_v<T>;
 template <duration Duration = std::chrono::nanoseconds>
 class Timer
 {
+	template <class Function, class... Args>
+	using ReturnType = std::invoke_result_t<Function, Args...>;
+
 public:
 
 	template <duration Duration = std::chrono::nanoseconds>
@@ -84,13 +87,14 @@ public:
 	};
 
 	template <class Function, class... Args>
-	requires std::invocable<Function, Args...>
-		  && std::is_assignable_v<std::invoke_result_t<Function, Args...>,
-							      std::invoke_result_t<Function, Args...>>
+	requires std::invocable<Function, Args...> &&
+		   ( std::is_copy_assignable_v<ReturnType<Function, Args...>> ||
+			 std::is_move_assignable_v<ReturnType<Function, Args...>>
+		   )
 	[[nodiscard]] static auto time_function(Function&& f, Args&&... args) -> Duration
 	{
 		auto start = std::chrono::high_resolution_clock::now();
-		if constexpr (std::is_same_v<std::invoke_result_t<Function, Args...>, void>)
+		if constexpr (std::is_same_v<ReturnType<Function, Args...>, void>)
 		{
 			std::invoke(std::forward<Function>(f), std::forward<Args>(args)...);
 		}
@@ -105,12 +109,12 @@ public:
 	}
 
 	template <class Function, class... Args>
-	requires std::invocable<Function, Args...> 
-		  && std::is_assignable_v<std::invoke_result_t<Function, Args...>&,
-								  std::invoke_result_t<Function, Args...>>
+	requires std::invocable<Function, Args...> &&
+		   ( std::is_copy_assignable_v<ReturnType<Function, Args...>> ||
+			 std::is_move_assignable_v<ReturnType<Function, Args...>>
+		   )
 	[[nodiscard]] static auto time_function(
-		std::invoke_result_t<Function, Args...>& result, 
-		Function&& f, Args&&... args) -> Duration
+		ReturnType<Function, Args...>& result, Function&& f, Args&&... args) -> Duration
 	{
 		auto start = std::chrono::high_resolution_clock::now();
 		result = std::invoke(std::forward<Function>(f), std::forward<Args>(args)...);
@@ -138,7 +142,7 @@ public:
 
 	template <class OutputIt, class Function, class... Args>
 	requires std::invocable<Function, Args...>
-		  && std::output_iterator<OutputIt, std::invoke_result_t<Function, Args...>>
+		  && std::output_iterator<OutputIt, ReturnType<Function, Args...>>
 	[[nodiscard]] static auto time_function_repeatedly(
 		std::size_t repeats, OutputIt outputIt, Function&& f, Args&&... args) -> Statistics<Duration>
 	{
