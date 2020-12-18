@@ -77,11 +77,13 @@ public:
 				<< "Standard deviation: " << stats.standard_deviation << '\n';
 
 			out << "Durations: ";
-			std::size_t size = std::min<std::size_t>(5, stats.durations.size());
-			for (std::size_t i = 0; i < size; ++i)
-			{
-				out << stats.durations[i].count() << ' ';
-			}
+			std::size_t size = std::min<std::size_t>(5u, stats.durations.size());
+			std::for_each_n(stats.durations.cbegin(), size, 
+				[&out](const Duration& duration)
+				{
+					out << duration.count() << ' ';
+				}
+			);
 			return out << "...\n";
 		}
 	};
