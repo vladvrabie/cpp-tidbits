@@ -74,8 +74,8 @@ public:
 				<< "Standard deviation: " << stats.standard_deviation << '\n';
 
 			out << "Durations: ";
-			size_t size = std::min<size_t>(5, stats.durations.size());
-			for (size_t i = 0; i < size; ++i)
+			std::size_t size = std::min<std::size_t>(5, stats.durations.size());
+			for (std::size_t i = 0; i < size; ++i)
 			{
 				out << stats.durations[i].count() << ' ';
 			}
@@ -85,6 +85,7 @@ public:
 
 	template <class Function, class... Args>
 	requires std::invocable<Function, Args...>
+		&& std::is_assignable_v<std::invoke_result_t<Function, Args...>, std::invoke_result_t<Function, Args...>>
 	static
 	auto time_function(Function&& f, Args&&... args) -> D
 	{
@@ -106,13 +107,26 @@ public:
 	}
 
 	template <class Function, class... Args>
+	requires std::invocable<Function, Args...> 
+		&& std::is_assignable_v<std::invoke_result_t<Function, Args...>&, std::invoke_result_t<Function, Args...>>
+	static
+	auto time_function(std::invoke_result_t<Function, Args...>& result, Function&& f, Args&&... args) -> D
+	{
+		auto start = std::chrono::high_resolution_clock::now();
+		result = std::invoke(std::forward<Function>(f), std::forward<Args>(args)...);
+		auto end = std::chrono::high_resolution_clock::now();
+		auto time = end - start;
+		return std::chrono::duration_cast<D>(time);
+	}
+
+	template <class Function, class... Args>
 	requires std::invocable<Function, Args...>
 	static
-	auto time_function_repeatedly(size_t repeats, Function&& f, Args&&... args) -> Statistics<D>
+	auto time_function_repeatedly(std::size_t repeats, Function&& f, Args&&... args) -> Statistics<D>
 	{
 		std::vector<D> results;
 		results.reserve(repeats);
-		//for (size_t i = 0; i < repeats; ++i)
+		//for (std::size_t i = 0; i < repeats; ++i)
 		//{
 		//	auto&& time = Timer::time_function(std::forward<Function>(f), std::forward<Args>(args)...);
 		//	results.emplace_back(time);
@@ -123,6 +137,25 @@ public:
 		//std::generate_n(std::back_inserter(results), repeats, [f = std::forward<Function>(f), ... args = std::forward<Args>(args)] // compiler error if I also forward f in the body
 			{
 				return Timer::time_function(std::forward<Function>(f), std::forward<Args>(args)...);
+			}
+		);
+		return Statistics<D>(std::move(results));
+	}
+
+	template <class OutputIt, class Function, class... Args>
+	requires std::invocable<Function, Args...>
+		&& std::output_iterator<OutputIt, std::invoke_result_t<Function, Args...>>
+	static
+	auto time_function_repeatedly(std::size_t repeats, OutputIt outputIt, Function&& f, Args&&... args) -> Statistics<D>
+	{
+		std::vector<D> results;
+		results.reserve(repeats);
+		std::generate_n(std::back_inserter(results), repeats, [&outputIt, &f, &args...] // works
+		//std::generate_n(std::back_inserter(results), repeats, [&outputIt, &f, ... args = std::forward<Args>(args)] // works
+		//std::generate_n(std::back_inserter(results), repeats, [&outputIt, f = std::forward<Function>(f), &args...] // compiler error if I also forward f in the body
+		//std::generate_n(std::back_inserter(results), repeats, [&outputIt, f = std::forward<Function>(f), ... args = std::forward<Args>(args)] // compiler error if I also forward f in the body
+			{
+				return Timer::time_function(*outputIt++, std::forward<Function>(f), std::forward<Args>(args)...);
 			}
 		);
 		return Statistics<D>(std::move(results));
