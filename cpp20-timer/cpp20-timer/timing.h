@@ -127,15 +127,7 @@ public:
 		std::vector<Duration> results;
 		results.reserve(repeats);
 		std::generate_n(std::back_inserter(results), repeats,
-			// Here are various ways in which i tried perfect forwarding in a lambda:
-			// works:
 			[&f, &args...]
-			// works:
-			//[&f, ... args = std::forward<Args>(args)]
-			// compiler error if I also forward f in the body:
-			//[f = std::forward<Function>(f), &args...]
-			// compiler error if I also forward f in the body:
-			//[f = std::forward<Function>(f), ... args = std::forward<Args>(args)]
 			{
 				return Timer::time_function(
 					std::forward<Function>(f), std::forward<Args>(args)...);
@@ -153,15 +145,7 @@ public:
 		std::vector<Duration> results;
 		results.reserve(repeats);
 		std::generate_n(std::back_inserter(results), repeats,
-			// Here are various ways in which i tried perfect forwarding in a lambda:
-			// works:
 			[&outputIt, &f, &args...]
-			// works:
-			//[&outputIt, &f, ... args = std::forward<Args>(args)]
-			// compiler error if I also forward f in the body:
-			//[&outputIt, f = std::forward<Function>(f), &args...]
-			// compiler error if I also forward f in the body:
-			//[&outputIt, f = std::forward<Function>(f), ... args = std::forward<Args>(args)]
 			{
 				return Timer::time_function(
 					*outputIt++, std::forward<Function>(f), std::forward<Args>(args)...);
@@ -170,4 +154,3 @@ public:
 		return Statistics<Duration>(std::move(results));
 	}
 };
-
