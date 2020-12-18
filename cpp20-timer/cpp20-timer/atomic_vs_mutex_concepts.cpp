@@ -94,47 +94,76 @@ auto run_mutex_custom_type()
 
 int main()
 {
-	std::size_t nb_runs = 50;
+	// Higher order function
+	auto equal_to_first_pred = []<class Container>(const Container& c)
+	{
+		return [&front = std::as_const(c.front())](typename Container::const_reference elem) 
+		{
+			return front == elem;
+		};
+	};
 
-	auto stats = Timer<std::chrono::milliseconds>::time_function_repeatedly(
-		nb_runs, run_atomic
-	);
-	std::cout << stats << '\n';
+	std::size_t nb_runs = 50u;
 
-	auto stats2 = Timer<std::chrono::milliseconds>::time_function_repeatedly(
-		nb_runs, run_mutex
-	);
-	std::cout << stats2 << '\n';
+	//////////// Atomic test - no return values
+	{
+		auto stats = Timer<std::chrono::milliseconds>::time_function_repeatedly(
+			nb_runs, run_atomic
+		);
+		std::cout << stats << '\n';
+	}
+	//////////// Mutex test - no return values
+	{
+		auto stats = Timer<std::chrono::milliseconds>::time_function_repeatedly(
+			nb_runs, run_mutex
+		);
+		std::cout << stats << '\n';
+	}
+	//////////// Atomic test - with return values
+	{
+		auto results = std::vector(nb_runs, 0);
 
-	auto xs = std::vector(nb_runs, 0);
-	//xs.assign(nb_runs, 0);
+		auto stats = Timer<std::chrono::milliseconds>::time_function_repeatedly(
+			nb_runs, results.begin(), run_atomic
+		);
+		std::cout << stats;
 
-	auto stats3 = Timer<std::chrono::milliseconds>::time_function_repeatedly(
-		nb_runs, xs.begin(), run_atomic
-	);
-	std::cout << stats3;
-	if (std::all_of(xs.cbegin(), xs.cend(), [&xs](int i) {return xs[0] == i; }))
-		std::cout << "All results are equal to " << xs[0] << "\n\n";
+		bool all_are_equal = std::all_of(results.cbegin(), results.cend(),
+										 equal_to_first_pred(results));
+		if (all_are_equal)
+			std::cout << "All results are equal to " << results.front() << "\n\n";
+	}
+	//////////// Mutex test - with return values
+	{
+		auto results = std::vector(nb_runs, 0);
 
-	xs.assign(nb_runs, 0);
+		auto stats = Timer<std::chrono::milliseconds>::time_function_repeatedly(
+			nb_runs, results.begin(), run_mutex
+		);
+		std::cout << stats;
 
-	auto stats4 = Timer<std::chrono::milliseconds>::time_function_repeatedly(
-		nb_runs, xs.begin(), run_mutex
-	);
-	std::cout << stats4;
-	if (std::all_of(xs.cbegin(), xs.cend(), [&xs](int i) {return xs[0] == i; }))
-		std::cout << "All results are equal to " << xs[0] << "\n\n";
+		bool all_are_equal = std::all_of(results.cbegin(), results.cend(),
+									     equal_to_first_pred(results));
+		if (all_are_equal)
+			std::cout << "All results are equal to " << results.front() << "\n\n";
+	}
+	//////////// Mutex test - with return values && custom type
+	{
+		auto results = std::vector(nb_runs, InstanceCountingType<int>{});
+		std::cout << "\n\n";
 
-	auto xs2 = std::vector(nb_runs, InstanceCountingType<int>{});
-	std::cout << "\n\n";
-	auto stats5 = Timer<std::chrono::milliseconds>::time_function_repeatedly(
-		nb_runs, xs2.begin(), run_mutex_custom_type
-	);
-	std::cout << "\n\n";
-	std::cout << stats5;
-	if (std::all_of(xs2.cbegin(), xs2.cend(), [&xs2](const InstanceCountingType<int>& i) {return xs2[0] == i; }))
-		std::cout << "All results are equal to " << xs2[0].value << "\n";
-	std::cout << "Custom type number of instances: " << InstanceCountingType<int>::instances << '\n';
- 
+		auto stats = Timer<std::chrono::milliseconds>::time_function_repeatedly(
+			nb_runs, results.begin(), run_mutex_custom_type
+		);
+		std::cout << "\n\n" << stats;
+
+		bool all_are_equal = std::all_of(results.cbegin(), results.cend(), 
+										 equal_to_first_pred(results));
+		if (all_are_equal)
+			std::cout << "All results are equal to " << results.front().value << '\n';
+
+		std::cout << "Custom type number of instances: " << InstanceCountingType<int>::instances << '\n';
+	}
+
 	return 0;
 }
