@@ -1,10 +1,12 @@
 #pragma once
 
+#include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <concepts>
 #include <functional>
 #include <iostream>
+#include <iterator>
 #include <numeric>
 #include <type_traits>
 #include <utility>
@@ -41,8 +43,8 @@ public:
 			: durations{ times }
 		{
 			double sum = std::accumulate(
-				durations.cbegin(), 
-				durations.cend(), 
+				durations.cbegin(),
+				durations.cend(),
 				0.0,
 				[]<duration D>(double&& sum, const D& time)
 				{
@@ -70,7 +72,7 @@ public:
 			out << "Mean: " << stats.mean << '\n'
 				<< "Variance: " << stats.variance << '\n'
 				<< "Standard deviation: " << stats.standard_deviation << '\n';
-			
+
 			out << "Durations: ";
 			size_t size = std::min<size_t>(5, stats.durations.size());
 			for (size_t i = 0; i < size; ++i)
@@ -94,7 +96,7 @@ public:
 		else
 		{
 			auto result = std::invoke(
-				std::forward<Function>(f), 
+				std::forward<Function>(f),
 				std::forward<Args>(args)...
 			);
 		}
@@ -110,11 +112,19 @@ public:
 	{
 		std::vector<D> results;
 		results.reserve(repeats);
-		for (size_t i = 0; i < repeats; ++i)
-		{
-			auto&& time = Timer::time_function(std::forward<Function>(f), std::forward<Args>(args)...);
-			results.emplace_back(time);
-		}
+		//for (size_t i = 0; i < repeats; ++i)
+		//{
+		//	auto&& time = Timer::time_function(std::forward<Function>(f), std::forward<Args>(args)...);
+		//	results.emplace_back(time);
+		//}
+		std::generate_n(std::back_inserter(results), repeats, [&f, &args...] // works
+		//std::generate_n(std::back_inserter(results), repeats, [&f, ... args = std::forward<Args>(args)] // works
+		//std::generate_n(std::back_inserter(results), repeats, [f = std::forward<Function>(f), &args...] // compiler error if I also forward f in the body
+		//std::generate_n(std::back_inserter(results), repeats, [f = std::forward<Function>(f), ... args = std::forward<Args>(args)] // compiler error if I also forward f in the body
+			{
+				return Timer::time_function(std::forward<Function>(f), std::forward<Args>(args)...);
+			}
+		);
 		return Statistics<D>(std::move(results));
 	}
 };
