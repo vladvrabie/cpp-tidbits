@@ -1,0 +1,12 @@
+https://stackoverflow.com/questions/669818/virtual-assignment-operator-c
+
+https://stackoverflow.com/questions/4933056/how-do-i-explicitly-instantiate-a-template-function
+
+Just some dummy hierarchy 
+
+Use template operator= override with concept to check for base classes and delegate
+to base operator=
+
+Use explicit instatiation
+
+Add virtual operator= for self
